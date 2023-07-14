@@ -3,6 +3,7 @@ import 'package:chaavie_customer/views/address_book/add_address.dart';
 import 'package:chaavie_customer/views/address_book/my_address_page.dart';
 import 'package:chaavie_customer/views/address_book/recipient_address_page.dart';
 import 'package:chaavie_customer/views/booking/booking_page1.dart';
+import 'package:chaavie_customer/views/booking/chagptorder.dart';
 import 'package:chaavie_customer/views/booking/chatgptslide.dart';
 import 'package:chaavie_customer/views/first_page.dart';
 import 'package:chaavie_customer/views/home_page.dart';
@@ -52,6 +53,9 @@ class Routes{
         
       case RoutesName.chatgptslide:
         return MaterialPageRoute(builder: (BuildContext context)=> CarouselSlide());
+
+      // case RoutesName.chatgptorder:
+      //   return MaterialPageRoute(builder: (BuildContext context)=> OrderPlacingView());
 
 
       default:

@@ -3,6 +3,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 
 import '../../res/app_colors.dart';
 import '../../utils/routes/routes_name.dart';
+import '../../utils/utils.dart';
 class Profile_Page extends StatefulWidget {
   const Profile_Page({Key? key}) : super(key: key);
 
@@ -60,7 +61,7 @@ class _Profile_PageState extends State<Profile_Page> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('CUSTOMER NAME',style: TextStyle(
+                                  Text(Utils.userName.toString(),style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w400,
                                       fontFamily: 'Argentum Sans',
@@ -195,7 +196,7 @@ class _Profile_PageState extends State<Profile_Page> {
                               color: AppColors.buttonsColor,
                               fontSize: 14.sp,
                             ),),
-                            Text('1234',style: TextStyle(
+                            Text(Utils.walletamount.toString(),style: TextStyle(
                                 color: AppColors.buttonsColor,
                                 fontWeight: FontWeight.w600,fontSize: 25.sp
                             ),)

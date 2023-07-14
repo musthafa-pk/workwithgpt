@@ -7,9 +7,12 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 
 import '../../res/app_colors.dart';
 import '../../res/components/Booking Screen Components/custom_dropdown.dart';
+import '../../res/components/timepickersegmented_button.dart';
 import '../../utils/routes/routes_name.dart';
 import '../../utils/utils.dart';
 import 'package:http/http.dart' as http;
+
+import '../../utils/utils.dart';
 
 class BookingPage1 extends StatefulWidget {
   const BookingPage1({Key? key}) : super(key: key);
@@ -19,11 +22,19 @@ class BookingPage1 extends StatefulWidget {
 }
 
 class _BookingPage1State extends State<BookingPage1> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    selectedDate = '';
+    selectedTime = '';
+    Utils.selectedFromAddress = 'Pick an address';
+    Utils.FromAddress.clear();
+    Utils.ToAddress.clear();
+    super.initState();
+  }
 
-  int userId = 85;
 
   List<String> items = ['chaavie Solutions','A ONE','BLUE STAR'];
-  String? selectedOptions='';
 
   String? selectedDate='';
   bool s_1 = false;
@@ -42,20 +53,18 @@ class _BookingPage1State extends State<BookingPage1> {
 
 
 
+
+
   Future<String?> fetchAddressBookDetails(int userId) async {
-    print('this function called...');
     final url = Uri.parse('http://192.168.1.4:3000/addressbook/$userId');
 
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        print('success....');
         final jsonData = json.encode(response.body);
         // final addressBookDetails = jsonData as String?;
         final addressBookDetails = response.body as String;
-        print (addressBookDetails);
-        print('working...');
         return addressBookDetails;
       } else {
         throw Exception('Failed to fetch address book details. Status Code: ${response.statusCode}');
@@ -65,24 +74,13 @@ class _BookingPage1State extends State<BookingPage1> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child:FutureBuilder<String?>(
-            future: fetchAddressBookDetails(userId),
-            builder: (context,snapshot) {
-              if(snapshot.connectionState == ConnectionState.waiting){
-                return Center(child: CircularProgressIndicator(),);
-              }
-              if(snapshot.hasData){
-                final fetchedAddressDetails = snapshot.data;
-                final List<dynamic> items = fetchedAddressDetails != null ? json.decode(fetchedAddressDetails) as List<dynamic> : [];
-                return Padding(
+          child:Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +107,7 @@ class _BookingPage1State extends State<BookingPage1> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text('Pickup Location',style: TextStyle(
-                              color: AppColors.buttonsColor,
+                              color: Colors.black54,
                               fontSize: 18.sp
                           ),),
                         ],
@@ -120,25 +118,53 @@ class _BookingPage1State extends State<BookingPage1> {
                           borderRadius: BorderRadius.circular(25),
                           border:Border.all(width: 1,color: AppColors.buttonsColor),
                         ),
-                        child:CustomDropdown(
-                          hintText: Utils.selectedFromAddress.toString(),
-                          options: items
-                              .where((value) => value['category'].toString().toLowerCase() == 'from')
-                              .map((value) => value['address_label'].toString())
-                              .toList(),
-                          onChanged: (value) {
-                            final selectedAddress = items.firstWhere((item) => item['address_label'].toString() == value);
-                            setState(() {
-                              Utils.selectedFromAddress = selectedAddress;
-                              Utils.selectedTradeName = selectedAddress['address_label'].toString();
-                              Utils.selectedPin = selectedAddress['address']['pin'].toString();
-                              Utils.selectedLatitude = double.parse(selectedAddress['latitude'].toString());
-                              Utils.selectedLongitude = double.parse(selectedAddress['longitude'].toString());
-                              Utils.selectedDistrict = selectedAddress['district'].toString();
-                              Utils.selectedLocality = selectedAddress['locality'].toString();
-                              print(Utils.selectedFromAddress.toString());
-                            });
-                          },
+                        child:FutureBuilder<String?>(
+                          future: fetchAddressBookDetails(Utils.userId),
+                          builder: (context,snapshot) {
+                            if(snapshot.connectionState == ConnectionState.waiting){
+                              return Center(child: CircularProgressIndicator(),);
+                            }
+                            if(snapshot.hasData){
+                              final fetchedAddressDetails = snapshot.data;
+                              final List<dynamic> items = fetchedAddressDetails != null ? json.decode(fetchedAddressDetails) as List<dynamic> : [];
+                              return CustomDropdown(
+                                hintText: Utils.selectedFromAddress.toString(),
+                                options: [
+                                  ...items
+                                      .where((value) => value['category'].toString().toLowerCase() == 'from')
+                                      .map((value) => value['address_label'].toString())
+                                      .toList(),
+                                  'Add new address...', // Add a new option for adding a new address
+                                ],
+                                onChanged: (value) {
+                                  if (value == 'Add new address...') {
+                                    Navigator.pushNamed(context, RoutesName.addAddress);
+                                  } else {
+                                    Utils.FromAddress.clear();
+                                    Utils.orderdetails.clear();
+                                    final selectedAddress = items.firstWhere((item) => item['address_label'].toString() == value);
+                                    Utils.selectedFromAddress = selectedAddress['address_label'].toString();
+                                    Utils.FromAddress.add(selectedAddress);
+                                    print('heloooo${Utils.FromAddress}');
+                                    setState(() {
+                                      Utils.selectedLocality = selectedAddress['locality'].toString().toLowerCase();
+                                      Utils.selectedLatitude = double.parse(selectedAddress['latitude']);
+                                      Utils.selectedLongitude = double.parse(selectedAddress['longitude']);
+                                      print(Utils.selectedLatitude);
+                                      print(Utils.selectedLongitude);
+                                    });
+                                  }
+                                },
+                              );
+
+                            }
+                            if(snapshot.hasError){
+                              return Text('Restart application...');
+                            }
+                            return Text('something went wrong....');
+
+                          }
+
                         ),
 
 
@@ -380,7 +406,7 @@ class _BookingPage1State extends State<BookingPage1> {
                       // ),
 
                       Text('Pickup Date',style: TextStyle(
-                          color: AppColors.buttonsColor,
+                          color: Colors.black54,
                           fontSize: 18.sp),),
                       SizedBox(height: 2.h,),
                       SingleChildScrollView(
@@ -410,6 +436,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_7=false;
                                               s_8=false;
                                               Utils.selectedDate = DateTime.now().toString();
+                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 1))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -584,7 +611,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                                       fontFamily: 'ArgentumSans'
                                                   ),),
                                                   Text(DateFormat('d').format(DateTime.now().add(Duration(days: 4))).toString(),style: TextStyle(color: s_5 == true?Colors.white:AppColors.buttonsColor),),
-                                                  Text(DateFormat('EEEE').format(DateTime.now().add(Duration(days: 4))).toString(),style: TextStyle(color:s_5 == true?Colors.white: AppColors.buttonsColor),),
+                                                  Text(DateFormat('EE').format(DateTime.now().add(Duration(days: 4))).toString(),style: TextStyle(color:s_5 == true?Colors.white: AppColors.buttonsColor),),
                                                 ],
                                               ),
                                             ),
@@ -642,7 +669,8 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=true;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 6))).toString();
+                                              DateTime  selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 6))) as DateTime;
+                                              Utils.selectedDate = DateFormat('dd-MM-y').format(selectedDate).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -690,110 +718,143 @@ class _BookingPage1State extends State<BookingPage1> {
                         ],
                       ),
 
-                      Text('Pickup Time',style:TextStyle(
-                        color: AppColors.buttonsColor,
+                      // Text('Pickup Time',style:TextStyle(
+                      //   color: AppColors.buttonsColor,
+                      //   fontSize: 18.sp,
+                      // )),
+                      // SizedBox(height: 2.h,),
+                      // Padding(
+                      //   padding: const EdgeInsets.only(left: 10,right: 10),
+                      //   child: Container(
+                      //     decoration: BoxDecoration(
+                      //       border: Border.all(width: 1,color: AppColors.buttonsColor),
+                      //       borderRadius: BorderRadius.circular(25),
+                      //     ),
+                      //     child: Row(
+                      //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //       children: [
+                      //         InkWell(
+                      //           onTap: (){
+                      //             setState(() {
+                      //               time1=true;
+                      //               time2=false;
+                      //               time3=false;
+                      //               if(time1== true){
+                      //                 setState(() {
+                      //                   Utils.selectedTime = '09:00AM 12:00PM';
+                      //                   print(Utils.selectedTime);
+                      //                 });
+                      //               }
+                      //             });
+                      //           },
+                      //           child: Container(
+                      //             width: 100,
+                      //             decoration: BoxDecoration(
+                      //                 color: time1==true? AppColors.buttonsColor:Colors.white,
+                      //                 borderRadius: BorderRadius.only(topLeft: Radius.circular(25),bottomLeft: Radius.circular(25))
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text('09:00 AM',style: TextStyle(color: time1==true?Colors.white:AppColors.buttonsColor),),
+                      //                 Text('12:00 PM',style: TextStyle(color: time1==true?Colors.white:AppColors.buttonsColor)),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //         InkWell(
+                      //           onTap: (){
+                      //             setState(() {
+                      //               time1=false;
+                      //               time2=true;
+                      //               time3=false;
+                      //               setState(() {
+                      //                 if(time2==true){
+                      //                   setState(() {
+                      //                     Utils.selectedTime = '12:00PM 03:00PM';
+                      //                     print(Utils.selectedTime);
+                      //                   });
+                      //                 }
+                      //               });
+                      //             });
+                      //           },
+                      //           child: Container(
+                      //             width: 100,
+                      //             decoration: BoxDecoration(
+                      //               color:time2==true? AppColors.buttonsColor:Colors.white,
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text('12:00 PM',style: TextStyle(color: time2==true?Colors.white:AppColors.buttonsColor)),
+                      //                 Text('03:00 PM',style: TextStyle(color: time2==true?Colors.white:AppColors.buttonsColor)),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //         InkWell(
+                      //           onTap: (){
+                      //             setState(() {
+                      //               time1=false;
+                      //               time2=false;
+                      //               time3=true;
+                      //               if(time3 == true){
+                      //                 setState(() {
+                      //                   Utils.selectedTime = "03:00PM 06:00PM";
+                      //                   print(Utils.selectedTime);
+                      //                 });
+                      //               }
+                      //             });
+                      //           },
+                      //           child: Container(
+                      //             width: 100,
+                      //             decoration: BoxDecoration(
+                      //                 color: time3==true? AppColors.buttonsColor:Colors.white,
+                      //                 borderRadius: BorderRadius.only(topRight: Radius.circular(25),bottomRight: Radius.circular(25))
+                      //             ),
+                      //             child: Column(
+                      //               children: [
+                      //                 Text('03:00 PM',style: TextStyle(color: time3==true?Colors.white:AppColors.buttonsColor)),
+                      //                 Text('06:00 PM',style: TextStyle(color: time3==true?Colors.white:AppColors.buttonsColor)),
+                      //               ],
+                      //             ),
+                      //           ),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
+
+                      Text('Pickup Time', style: TextStyle(
+                        color: Colors.black54,
                         fontSize: 18.sp,
                       )),
                       SizedBox(height: 2.h,),
                       Padding(
-                        padding: const EdgeInsets.only(left: 10,right: 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(width: 1,color: AppColors.buttonsColor),
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              InkWell(
-                                onTap: (){
-                                  setState(() {
-                                    time1=true;
-                                    time2=false;
-                                    time3=false;
-                                    if(time1== true){
-                                      setState(() {
-                                        Utils.selectedTime = '09:00AM 12:00PM';
-                                        print(Utils.selectedTime);
-                                      });
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  width: 100,
-                                  decoration: BoxDecoration(
-                                      color: time1==true? AppColors.buttonsColor:Colors.white,
-                                      borderRadius: BorderRadius.only(topLeft: Radius.circular(25),bottomLeft: Radius.circular(25))
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text('09:00 AM',style: TextStyle(color: time1==true?Colors.white:AppColors.buttonsColor),),
-                                      Text('12:00 PM',style: TextStyle(color: time1==true?Colors.white:AppColors.buttonsColor)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: (){
-                                  setState(() {
-                                    time1=false;
-                                    time2=true;
-                                    time3=false;
-                                    setState(() {
-                                      if(time2==true){
-                                        setState(() {
-                                          Utils.selectedTime = '12:00PM 03:00PM';
-                                          print(Utils.selectedTime);
-                                        });
-                                      }
-                                    });
-                                  });
-                                },
-                                child: Container(
-                                  width: 100,
-                                  decoration: BoxDecoration(
-                                    color:time2==true? AppColors.buttonsColor:Colors.white,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text('12:00 PM',style: TextStyle(color: time2==true?Colors.white:AppColors.buttonsColor)),
-                                      Text('03:00 PM',style: TextStyle(color: time2==true?Colors.white:AppColors.buttonsColor)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: (){
-                                  setState(() {
-                                    time1=false;
-                                    time2=false;
-                                    time3=true;
-                                    if(time3 == true){
-                                      setState(() {
-                                        Utils.selectedTime = "03:00PM 06:00PM";
-                                        print(Utils.selectedTime);
-                                      });
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  width: 100,
-                                  decoration: BoxDecoration(
-                                      color: time3==true? AppColors.buttonsColor:Colors.white,
-                                      borderRadius: BorderRadius.only(topRight: Radius.circular(25),bottomRight: Radius.circular(25))
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Text('03:00 PM',style: TextStyle(color: time3==true?Colors.white:AppColors.buttonsColor)),
-                                      Text('06:00 PM',style: TextStyle(color: time3==true?Colors.white:AppColors.buttonsColor)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        padding: const EdgeInsets.only(left: 10, right: 10),
+                        child: CustomSegmentedButton(
+                          segments: [
+                            '09:00 AM   12:00 PM',
+                            '12:00 PM   03:00 PM',
+                            '03:00 PM   06:00 AM',
+                          ],
+                          onValueChanged: (value) {
+                            setState(() {
+                              switch (value) {
+                                case 0:
+                                  Utils.selectedTime = '09:00 AM - 12:00 PM';
+                                  break;
+                                case 1:
+                                  Utils.selectedTime = '12:00 PM - 03:00 PM';
+                                  break;
+                                case 2:
+                                  Utils.selectedTime = '03:00 PM - 06:00 AM';
+                                  break;
+                              }
+                              print(Utils.selectedTime);
+                            });
+                          },
                         ),
                       ),
+
                       SizedBox(height: 4.h,),
                       SizedBox(height: 10.h,),
                       Row(
@@ -801,6 +862,9 @@ class _BookingPage1State extends State<BookingPage1> {
                         children: [
                           InkWell(
                             onTap: (){
+                              setState(() {
+
+                              });
                               Navigator.pushNamed(context, RoutesName.chatgptslide);
                             },
                             child: Container(
@@ -822,14 +886,7 @@ class _BookingPage1State extends State<BookingPage1> {
                       )
                     ],
                   ),
-                );
-              }
-              if(snapshot.hasError){
-                return Text('Failed to fetch data...');
-              }
-              return Text('something went wrong....');
-            }
-          ),
+                )
         ),
       ),
     );

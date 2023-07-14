@@ -30,7 +30,7 @@ class _WalletState extends State<Wallet> {
                             children: [
                               Icon(Icons.check_circle,color: Colors.white,),
                               Text(
-                                'chaavie.com',
+                                'Chaavie Solutions',
                                 style: TextStyle(
                                   fontFamily: 'ArgentumSans',
                                   color:Colors.white,
@@ -40,7 +40,7 @@ class _WalletState extends State<Wallet> {
                           ),
                           SizedBox(height: 50,),
                           Text(
-                            '₹ 1234',
+                            '₹ 6969',
                             style: TextStyle(
                               fontFamily: 'ArgentumSans',
                               color:Colors.white,
@@ -50,7 +50,7 @@ class _WalletState extends State<Wallet> {
                           ),
                           SizedBox(height: 20,),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
                                 children: [
@@ -63,7 +63,27 @@ class _WalletState extends State<Wallet> {
                                     ),
                                   ),
                                   Text(
-                                    'Chaavi Solutions',
+                                    'Musthafa',
+                                    style: TextStyle(
+                                      fontFamily: 'ArgentumSans',
+                                      color:Colors.white,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text(
+                                    'CUSTOMER ID:',
+                                    style: TextStyle(
+                                      fontFamily: 'ArgentumSans',
+                                      color:Colors.white60,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  Text(
+                                    '0000000001',
                                     style: TextStyle(
                                       fontFamily: 'ArgentumSans',
                                       color:Colors.white,

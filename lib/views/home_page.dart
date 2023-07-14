@@ -59,8 +59,8 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children:  [
-                              Text('Customer',style: TextStyle(fontSize: 18.sp),),
-                              Text('Nadakkav,Calicut',style: TextStyle(color: Colors.black38,fontSize: 16.sp),)
+                              Text(Utils.userName.toString(),style: TextStyle(fontSize: 18.sp),),
+                              Text('${Utils.userLocarion},${Utils.userDistrict}',style: TextStyle(color: Colors.black38,fontSize: 16.sp),)
                             ],
                           ),
                         ),
@@ -76,7 +76,7 @@ class _HomePageState extends State<HomePage> {
 
 
             Positioned(
-              top: 5.h,
+              top: 25.h,
               left: 0.w,
               right: 0.w,
               bottom: 20.h,

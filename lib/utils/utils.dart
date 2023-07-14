@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar_route.dart';
+import 'package:chaavie_customer/model/myAddress/AddressModel.dart';
 import 'package:chaavie_customer/utils/routes/routes_name.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_places_hoc081098/flutter_google_places_hoc081098.dart';
@@ -16,6 +17,17 @@ import '../res/app_colors.dart';
 import '../res/app_url.dart';
 import 'package:http/http.dart' as http;
 class Utils{
+  //user details
+  static String? userName = 'CHAAVIE SOLUTIONS';
+  static int userId = 85;
+  static String? userEmail = 'chaavi@gmail.com';
+  static String? phoneNumber = '1234567890';
+  static String? Profile_imageUrl;
+  static String? walletamount = '1234';
+  static String? userLocarion = 'Location';
+  static String? userDistrict = 'District';
+  static String? payement = 'from app';
+
   // address realated varioubles
   static String? selectedTradeName;
   static String? selectedPin;
@@ -24,10 +36,18 @@ class Utils{
   static String? selectedDistrict;
   static String? selectedLocality;
 
+  static String? selectedDropTradeName;
+  static String? selectedDropPin;
+  static double? selectedDropLatitude;
+  static double? selectedDropLongitude;
+  static String? selectedDropDistrict;
+  static String? selectedDropLocality;
+
   static TextEditingController count = TextEditingController();
   // varioubles
+  static String? selectedCategory = 'To';
   static String? selectedFromAddress = 'Pick an address';
-  static String? selectedDropAddress;
+  static String? selectedDropAddress = ' pick an address';
   static String? selectedDate;
   static String? selectedTime;
 
@@ -39,10 +59,29 @@ class Utils{
   static String? size = 'S';
 
   //////
+  static int? price;
   static int? bookingAdvance;
   static int? totalPrice;
+  static var pricebyCount;
 
-  static int priceByItem =0;
+  static int priceByItem = 0;
+
+  static String? selectedType;
+  static String? selectedSize;
+
+  static String? selected;
+  static List<Map<String,dynamic>> FromAddress =[];
+  static List<Map<String,dynamic>> ToAddress = [];
+  static List<Map<String,dynamic>> orderdetails = [];
+  static List<Map<String,dynamic>> shipmentList = [];
+  static List<Map<String,dynamic>> productList = [];
+
+
+
+  static List<AddressModel> selectedMyAddress =[];
+
+
+
 
 
 
@@ -57,6 +96,23 @@ class Utils{
       return 'Good Afternoon !';
     }
     return 'Good Evening !';
+  }
+
+  //PARSE TIME
+
+
+  static DateTime parseTime(String time) {
+    final parts = time.split(' ');
+    final hourMinute = parts[0].split(':');
+    final int hour = int.parse(hourMinute[0]);
+    final int minute = int.parse(hourMinute[1].substring(0, 2));
+
+    int adjustedHour = hour;
+    if (parts[1] == 'PM' && hour < 12) {
+      adjustedHour += 12;
+    }
+
+    return DateTime(0, 0, 0, adjustedHour, minute);
   }
 
   // next field focused in textField
@@ -194,24 +250,32 @@ class Utils{
   }
 
   //getindividual cost
-  static Future<void> getIndividualCost() async {
+  static Future<void> getIndividualCost(String size) async {
+    print('called.....');
     final url = Uri.parse('http://192.168.1.4:3000/orders/get_individual_cost');
-    print('called...');
-
+    // print('size is :${size}');
+    // print('district is :${Utils.FromAddress[0]['district']}'.toLowerCase());
+    // print('locality is :${Utils.selectedLocality}');
+    // print('latitude1 is :${Utils.selectedLatitude}');
+    // print('longitude1 is :${Utils.selectedLongitude}');
+    // print('to district is :${Utils.ToAddress[0]['district']}'.toLowerCase());
+    // print('to locality is :${Utils.ToAddress[0]['locality']}'.toLowerCase());
+    // print('to latitude is :${Utils.selectedDropLatitude}');
+    // print('to longitude is :${Utils.selectedDropLongitude}');
     // Create the request body
     final body = jsonEncode({
-      "size": "xl",
+      "size": size,
       "from": {
-        "district": "kozhikode",
-        "locality": "nadakkavu",
-        "latitude": "11.2726",
-        "longitude": "75.7800"
+        "district": Utils.FromAddress[0]['district'].toString().toLowerCase(),
+        "locality": Utils.FromAddress[0]['locality'].toString().toLowerCase(),
+        "latitude": Utils.selectedLatitude,
+        "longitude": Utils.selectedLongitude,
       },
       "to": {
-        "district": "malappuram",
-        "locality": "manjeri",
-        "latitude": "11.1203",
-        "longitude": "76.1199"
+        "district": Utils.ToAddress[0]['district'].toString().toLowerCase(),
+        "locality": Utils.ToAddress[0]['locality'].toString().toLowerCase(),
+        "latitude": Utils.selectedDropLatitude,
+        "longitude":Utils.selectedDropLongitude,
       }
     });
 
@@ -230,9 +294,8 @@ class Utils{
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         // Process the response data here
-        // print(responseData);
         Utils.priceByItem = responseData['cost'];
-        return responseData;
+        return responseData['cost'];
       } else {
         print('Request failed with status: ${response.statusCode}');
       }
@@ -243,7 +306,7 @@ class Utils{
   //place order
 
   static Future<void> createOrder(Order order) async {
-    final url = Uri.parse('http://localhost:3000/orders');
+    final url = Uri.parse('http://192.168.1.4:3000/orders');
 
     try {
       final response = await http.post(url,
@@ -260,5 +323,4 @@ class Utils{
       print('Error creating order: $e');
     }
   }
-
 }

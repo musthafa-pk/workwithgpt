@@ -22,4 +22,6 @@ class RoutesName{
   static const String orderPlacedSplash = 'order placed splash';
 
   static const String chatgptslide = 'chatgptslide';
+
+  // static const String chatgptorder = 'orderingpt';
 }

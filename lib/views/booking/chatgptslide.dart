@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:chaavie_customer/res/app_colors.dart';
 import 'package:chaavie_customer/res/app_styles.dart';
 import 'package:chaavie_customer/res/components/Booking%20Screen%20Components/custom_dropdown.dart';
@@ -33,16 +32,26 @@ class CarouselSegmentedButtonPage extends StatefulWidget {
 
 class _CarouselSegmentedButtonPageState
     extends State<CarouselSegmentedButtonPage> {
-
   int totalPrice = 0;
   int bookingAdvance = 0;
   dynamic data;
-  List<dynamic> filteredItems = [];
+
   List<Map<String, dynamic>> mainSlides = [
     {
       'id': 1,
       'segmentedValue': 'Carton',
       'sizeValue': 'Small',
+      'from': '',
+      'district': '',
+      'locality': '',
+      'latitude': '',
+      'longitude': '',
+      'to': '',
+      'to_locality': '',
+      'to_district': '',
+      'to_latitude': '',
+      'to_longitude': '',
+      'total_cost': '',
       'subSlides': [
         {
           'id': 1,
@@ -52,6 +61,9 @@ class _CarouselSegmentedButtonPageState
           'width': '',
           'height': '',
           'count': '',
+          'product': '',
+          'price': 0,
+          'priceBycount': 0,
         },
       ],
     },
@@ -71,6 +83,17 @@ class _CarouselSegmentedButtonPageState
         'dropdownValue': 'Option 1',
         'segmentedValue': 'Carton',
         'sizeValue': 'Small',
+        'from': '',
+        'district': '',
+        'locality': '',
+        'latitude': '',
+        'longitude': '',
+        'to': '',
+        'to_locality': '',
+        'to_district': '',
+        'to_latitude': '',
+        'to_longitude': '',
+        'total_cost': '',
         'subSlides': [
           {
             'id': 1,
@@ -80,6 +103,9 @@ class _CarouselSegmentedButtonPageState
             'width': '',
             'height': '',
             'count': '',
+            'product': '',
+            'price': 0,
+            'priceBycount': 0,
           },
         ],
       });
@@ -107,6 +133,9 @@ class _CarouselSegmentedButtonPageState
         'width': '',
         'height': '',
         'count': '',
+        'product': '',
+        'price': 0,
+        'piceBycount': 0,
       });
     });
   }
@@ -122,11 +151,13 @@ class _CarouselSegmentedButtonPageState
   // TextEditingController height = TextEditingController();
   // TextEditingController count = TextEditingController();
 
+  List<TextEditingController> productControllers = [];
   List<TextEditingController> lengthControllers = [];
   List<TextEditingController> widthControllers = [];
   List<TextEditingController> heightControllers = [];
   List<TextEditingController> countControllers = [];
 
+  FocusNode productNode = FocusNode();
   FocusNode lengthNode = FocusNode();
   FocusNode widthNode = FocusNode();
   FocusNode heightNode = FocusNode();
@@ -138,45 +169,97 @@ class _CarouselSegmentedButtonPageState
   bool extralarge = false;
 
   final _formKey = GlobalKey<FormState>();
-  int userId = 85;
 
-  Future<String?> fetchAddressBookDetails(int userId) async {
-    print('this function called...');
+  Future<String?> fetchAddressBook(int userId) async {
     final url = Uri.parse('http://192.168.1.4:3000/addressbook/$userId');
 
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        print('success....');
-        final jsonData = json.encode(response.body);
-        // final addressBookDetails = jsonData as String?;
         final addressBookDetails = response.body as String;
-        print (addressBookDetails);
-        print('working...');
         return addressBookDetails;
       } else {
-        throw Exception('Failed to fetch address book details. Status Code: ${response.statusCode}');
+        throw Exception(
+            'Failed to fetch address book details. Status Code: ${response.statusCode}');
       }
     } catch (error) {
       throw Exception('Error occurred during address book fetch: $error');
     }
   }
 
+  Future<String?> fetchAddressBookDetails(int userId) async {
+    final url = Uri.parse('http://192.168.1.4:3000/addressbook/$userId');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final jsonData = json.encode(response.body);
+        // final addressBookDetails = jsonData as String?;
+        final addressBookDetails = response.body as String;
+
+        return addressBookDetails;
+      } else {
+        throw Exception(
+            'Failed to fetch address book details. Status Code: ${response.statusCode}');
+      }
+    } catch (error) {
+      throw Exception('Error occurred during address book fetch: $error');
+    }
+  }
+
+  Future<void> getIndividualCost() async {
+    final url = Uri.parse('http://192.168.1.4:3000/orders/get_individual_cost');
+    print(Utils.selectedLatitude);
+
+    // Create the request body
+    final body = jsonEncode({
+      "size": "M",
+      "from": {
+        "district": Utils.FromAddress[0]['district'].toLowerCase(),
+        "locality": Utils.selectedLocality,
+        "latitude": Utils.selectedLatitude,
+        "longitude": Utils.selectedLongitude,
+      },
+      "to": {
+        "district": Utils.ToAddress[0]['district'].toLowerCase(),
+        "locality": Utils.ToAddress[0]['locality'].toLowerCase(),
+        "latitude": Utils.selectedDropLatitude,
+        "longitude": Utils.selectedDropLongitude,
+      }
+    });
+
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      // Handle the response
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        // Process the response data here
+        // print(responseData);
+        Utils.priceByItem = responseData['cost'];
+        print('this is value...${Utils.priceByItem}');
+        return responseData['cost'];
+      } else {
+        print('Request failed with status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
-    fetchAddressBookDetails(userId).then((fetchedAddressDetails) {
-      final List<dynamic> allItems = fetchedAddressDetails != null ? json.decode(fetchedAddressDetails) as List<dynamic> : [];
-      filteredItems = allItems.where((value) => value['category'].toString().toLowerCase() == 'To').toList();
-      print('its worrrrrrrrkin........');
-      setState(() {
-        // Update the state to trigger a rebuild
-      });
-    }).catchError((error) {
-      // Handle any errors that occur during the fetch operation
-      print('Error occurred during address book fetch: $error');
-    });
     super.initState();
   }
 
@@ -214,12 +297,15 @@ class _CarouselSegmentedButtonPageState
                 itemCount: mainSlides.length,
                 itemBuilder: (context, mainIndex, realIndex) {
                   final mainSlide = mainSlides[mainIndex];
+
+                  productControllers.clear();
                   lengthControllers.clear();
                   widthControllers.clear();
                   heightControllers.clear();
                   countControllers.clear();
 
                   for (int i = 0; i < mainSlide['subSlides'].length; i++) {
+                    productControllers.add(TextEditingController());
                     lengthControllers.add(TextEditingController());
                     widthControllers.add(TextEditingController());
                     heightControllers.add(TextEditingController());
@@ -230,6 +316,7 @@ class _CarouselSegmentedButtonPageState
                     widthControllers[i].text = subSlide['width'];
                     heightControllers[i].text = subSlide['height'];
                     countControllers[i].text = subSlide['count'];
+                    productControllers[i].text = subSlide['product'];
                   }
 
                   return SingleChildScrollView(
@@ -291,73 +378,96 @@ class _CarouselSegmentedButtonPageState
                               height: 10,
                             ),
 
-                            // Container(
-                            //   decoration: BoxDecoration(
-                            //     borderRadius: BorderRadius.circular(25),
-                            //     border:Border.all(width: 1,color: AppColors.buttonsColor),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                    width: 1, color: AppColors.buttonsColor),
+                              ),
+                              child: FutureBuilder(
+                                  future: fetchAddressBook(Utils.userId),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      final addressBookDetails = json.decode(snapshot.data!) as List<dynamic>;
+                                      final filteredItems = addressBookDetails.where((item) => item['category'] == 'To').toList();
+                                      return CustomDropdown(
+                                        hintText: Utils.selectedDropAddress.toString(),
+                                        options: filteredItems.map((value) => value['address_label'].toString()).toList(),
+                                        onChanged: (value) {
+                                          final selectedAddress = filteredItems.firstWhere((item) => item['address_label'].toString() == value);
+                                          Utils.ToAddress.add(selectedAddress);
+                                          Utils.shipmentList.add({
+                                            'to': Utils.ToAddress[0]['address_label'],
+                                            'cost': Utils.priceByItem,
+                                            'products': Utils.productList,
+                                          });
+                                          print('To Address');
+                                          print(Utils.priceByItem);
+                                          print(Utils.shipmentList);
+                                          setState(() {
+                                            Utils.selectedDropLatitude = double.parse(selectedAddress['latitude']);
+                                            Utils.selectedDropLongitude = double.parse(selectedAddress['longitude']);
+                                            Utils.orderdetails.add({
+                                              'from': Utils.FromAddress[0]['address_label'],
+                                              'date': Utils.selectedDate,
+                                              'user': 'deepak',
+                                              'payement': Utils.payement,
+                                              'shipment': Utils.shipmentList,
+                                            });
+                                            print('orderdetails');
+                                            print(Utils.orderdetails);
+                                          });
+                                          print(Utils.orderdetails);
+                                        },
+                                      );
+                                    }
+                                    if (snapshot.hasError) {
+                                      return Text(snapshot.error.toString());
+                                    }
+                                    return Text('Something wrong...');
+                                  }),
+                            ),
+
+                            // Padding(
+                            //   padding: const EdgeInsets.all(8.0),
+                            //   child: Container(
+                            //     width: MediaQuery.of(context).size.width,
+                            //     decoration: BoxDecoration(
+                            //         border: Border.all(
+                            //             width: 1,
+                            //             color: AppColors.buttonsColor),
+                            //         borderRadius: BorderRadius.circular(100)),
+                            //     child: Padding(
+                            //       padding: const EdgeInsets.only(left: 10.0),
+                            //       child: DropdownButton<String>(
+                            //         value: mainSlide['dropdownValue'],
+                            //         onChanged: (String? newValue) {
+                            //           setState(() {
+                            //             mainSlide['dropdownValue'] = newValue!;
+                            //           });
+                            //         },
+                            //         underline: Container(),
+                            //         isExpanded: true,
+                            //         alignment: Alignment.centerRight,
+                            //         items: [
+                            //           DropdownMenuItem(
+                            //             value: 'Option 1',
+                            //             child: Text('Option ONe'),
+                            //           ),
+                            //           DropdownMenuItem(
+                            //             value: 'Option 2',
+                            //             child: Text('Option Two'),
+                            //           ),
+                            //           DropdownMenuItem(
+                            //             value: 'Option 3',
+                            //             child: Text('Option Three'),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
                             //   ),
-                            //   child:CustomDropdown(
-                            //     hintText: Utils.selectedFromAddress.toString(),
-                            //     options: filteredItems
-                            //         .map((value) => value['address_label'].toString())
-                            //         .toList(),
-                            //     onChanged: (value) {
-                            //       final selectedAddress = filteredItems.firstWhere((item) => item['address_label'].toString() == value);
-                            //       setState(() {
-                            //         Utils.selectedFromAddress = selectedAddress;
-                            //         Utils.selectedTradeName = selectedAddress['address_label'].toString();
-                            //         Utils.selectedPin = selectedAddress['address']['pin'].toString();
-                            //         Utils.selectedLatitude = double.parse(selectedAddress['latitude'].toString());
-                            //         Utils.selectedLongitude = double.parse(selectedAddress['longitude'].toString());
-                            //         Utils.selectedDistrict = selectedAddress['district'].toString();
-                            //         Utils.selectedLocality = selectedAddress['locality'].toString();
-                            //         print(Utils.selectedFromAddress.toString());
-                            //       });
-                            //     },
-                            //   ),
-                            //
-                            //
                             // ),
 
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                decoration: BoxDecoration(
-                                    border: Border.all(
-                                        width: 1,
-                                        color: AppColors.buttonsColor),
-                                    borderRadius: BorderRadius.circular(100)),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 10.0),
-                                  child: DropdownButton<String>(
-                                    value: mainSlide['dropdownValue'],
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        mainSlide['dropdownValue'] = newValue!;
-                                      });
-                                    },
-                                    underline: Container(),
-                                    isExpanded: true,
-                                    alignment: Alignment.centerRight,
-                                    items: [
-                                      DropdownMenuItem(
-                                        value: 'Option 1',
-                                        child: Text('Option ONe'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'Option 2',
-                                        child: Text('Option Two'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'Option 3',
-                                        child: Text('Option Three'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
                             SizedBox(height: 16.0),
 
                             CarouselSlider.builder(
@@ -365,518 +475,85 @@ class _CarouselSegmentedButtonPageState
                               itemBuilder: (context, subIndex, realIndex) {
                                 final subSlide =
                                     mainSlide['subSlides'][subIndex];
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                        width: 1, color: Colors.black12),
-                                  ),
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Form(
-                                    // key: _formKey,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              height: 10,
-                                            ),
-                                            Container(
-                                                decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.buttonsColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            100)),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 3.0,
-                                                          right: 3.0,
-                                                          top: 2,
-                                                          bottom: 2),
-                                                  child: Text(
-                                                    '${subIndex + 1}',
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                ))
-                                          ],
-                                        ),
-                                        SizedBox(
-                                          height: 16.0,
-                                        ),
-                                        Text(
-                                          'Type',
-                                          style:
-                                              TextStyle(color: Colors.black54),
-                                        ),
-                                        SizedBox(
-                                          height: 10.0,
-                                        ),
-                                        Container(
-                                          // width: MediaQuery.of(context).size.width,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(100),
-                                            border: Border.all(
-                                                width: 1,
-                                                color: AppColors.buttonsColor),
-                                          ),
-                                          child: ToggleButtons(
-                                            selectedColor: Colors.white,
-                                            color: Colors.black,
-                                            fillColor: AppColors.buttonsColor,
-                                            borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(20),
-                                                bottomLeft: Radius.circular(20),
-                                                topRight: Radius.circular(20),
-                                                bottomRight:
-                                                    Radius.circular(20)),
-                                            constraints: BoxConstraints(
-                                              minWidth: 110,
-                                              minHeight: 50,
-                                            ),
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text('Carton'),
-                                                ],
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text('Bag/Sack'),
-                                                ],
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text('Other'),
-                                                ],
-                                              ),
-                                            ],
-                                            renderBorder: false,
-                                            isSelected: [
-                                              subSlide['segmentedValue'] ==
-                                                  'Carton',
-                                              subSlide['segmentedValue'] ==
-                                                  'Bag/Sack',
-                                              subSlide['segmentedValue'] ==
-                                                  'Other',
-                                            ],
-                                            onPressed: (int newIndex) {
-                                              setState(() {
-                                                if (newIndex == 0) {
-                                                  subSlide['segmentedValue'] =
-                                                      'Carton';
-                                                } else if (newIndex == 1) {
-                                                  subSlide['segmentedValue'] =
-                                                      'Bag/Sack';
-                                                } else {
-                                                  subSlide['segmentedValue'] =
-                                                      'Other';
-                                                }
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                        if (subSlide['segmentedValue'] ==
-                                            'Carton') ...[
-                                          SizedBox(
-                                            height: 10.0,
-                                          ),
+                                return SingleChildScrollView(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          width: 1, color: Colors.black12),
+                                    ),
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Form(
+                                      // key: _formKey,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
                                           Row(
                                             mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
+                                                MainAxisAlignment.center,
                                             children: [
-                                              Column(
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        subSlide['sizeValue'] =
-                                                            'S';
-                                                        small = true;
-                                                        medium = false;
-                                                        large = false;
-                                                        extralarge = false;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                          color: small == false
-                                                              ? Color.fromRGBO(
-                                                                  10, 8, 100, 1)
-                                                              : AppColors
-                                                                  .buttonsColor,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15)),
-                                                      child: SizedBox(
-                                                          height: 80,
-                                                          width: 80,
-                                                          child: Image.asset(
-                                                              './assets/images/smallman.png')),
-                                                    ),
-                                                  ),
-                                                  small == true
-                                                      ? Text(
-                                                          'Small',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        )
-                                                      : Text(''),
-                                                ],
-                                              ),
-                                              Column(
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        subSlide['sizeValue'] =
-                                                            'M';
-                                                        small = false;
-                                                        medium = true;
-                                                        large = false;
-                                                        extralarge = false;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                          color: medium == false
-                                                              ? Color.fromRGBO(
-                                                                  10, 8, 100, 1)
-                                                              : AppColors
-                                                                  .buttonsColor,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15)),
-                                                      child: SizedBox(
-                                                          height: 80,
-                                                          width: 80,
-                                                          child: Image.asset(
-                                                              './assets/images/mediumman.png')),
-                                                    ),
-                                                  ),
-                                                  medium == true
-                                                      ? Text(
-                                                          'Medium',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        )
-                                                      : Text(''),
-                                                ],
-                                              ),
-                                              Column(
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        subSlide['sizeValue'] =
-                                                            'L';
-                                                        small = false;
-                                                        medium = false;
-                                                        large = true;
-                                                        extralarge = false;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                          color: large == false
-                                                              ? Color.fromRGBO(
-                                                                  10, 8, 100, 1)
-                                                              : AppColors
-                                                                  .buttonsColor,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15)),
-                                                      child: SizedBox(
-                                                          height: 80,
-                                                          width: 80,
-                                                          child: Image.asset(
-                                                              './assets/images/largeman.png')),
-                                                    ),
-                                                  ),
-                                                  large == true
-                                                      ? Text(
-                                                          'Large',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        )
-                                                      : Text(''),
-                                                ],
-                                              ),
-                                              Column(
-                                                children: [
-                                                  InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        subSlide['sizeValue'] =
-                                                            'XL';
-                                                        small = false;
-                                                        medium = false;
-                                                        large = false;
-                                                        extralarge = true;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                          color: extralarge ==
-                                                                  false
-                                                              ? Color.fromRGBO(
-                                                                  10, 8, 100, 1)
-                                                              : AppColors
-                                                                  .buttonsColor,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15)),
-                                                      child: SizedBox(
-                                                          height: 80,
-                                                          width: 80,
-                                                          child: Image.asset(
-                                                              './assets/images/extralarge man.png')),
-                                                    ),
-                                                  ),
-                                                  extralarge == true
-                                                      ? Text(
-                                                          'X Large',
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
-                                                        )
-                                                      : Text(''),
-                                                ],
-                                              ),
+                                              SizedBox(height: 10,),
+                                              Container(
+                                                  decoration: BoxDecoration(
+                                                      color: AppColors.buttonsColor,
+                                                      borderRadius: BorderRadius.circular(100)),
+                                                  child: Padding(padding: const EdgeInsets.only(left: 3.0, right: 3.0, top: 2, bottom: 2),
+                                                    child: Text('${subIndex + 1}', style: TextStyle(color: Colors.white),),
+                                                  ))
                                             ],
                                           ),
-                                        ],
-                                        if (subSlide['segmentedValue'] ==
-                                            'Other') ...[
-                                          SizedBox(height: 16.0),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              Column(
-                                                children: [
-                                                  Text(
-                                                    'Length',
-                                                    style: TextStyle(
-                                                        color: Colors.black54),
-                                                  ),
-                                                  SizedBox(
-                                                    height: 10.0,
-                                                  ),
-                                                  SizedBox(
-                                                    width: 100,
-                                                    height: 40,
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(100),
-                                                        border: Border.all(
-                                                            width: 1,
-                                                            color: AppColors
-                                                                .buttonsColor),
-                                                      ),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .only(
-                                                                left: 10.0),
-                                                        child: TextFormField(
-                                                          controller:
-                                                              lengthControllers[
-                                                                  subIndex],
-                                                          focusNode: lengthNode,
-                                                          decoration:
-                                                              InputDecoration(
-                                                            border: InputBorder
-                                                                .none,
-                                                            hintText: 'Length',
-                                                          ),
-                                                          onFieldSubmitted:
-                                                              (value) {
-                                                            setState(() {
-                                                              print(value);
-                                                              subSlide[
-                                                                      'length'] =
-                                                                  lengthControllers[
-                                                                          subIndex]
-                                                                      .text;
-                                                              Utils.fieldFocusChange(
-                                                                  context,
-                                                                  lengthNode,
-                                                                  widthNode);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
+                                          Text('Product Details', style: TextStyle(color: Colors.black54),),
+                                          SizedBox(height: 10,),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(100),
+                                                border: Border.all(
+                                                    width: 1,
+                                                    color: AppColors
+                                                        .buttonsColor)),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 10.0),
+                                              child: TextFormField(
+                                                controller: productControllers[
+                                                    subIndex],
+                                                focusNode: productNode,
+                                                onFieldSubmitted: (value) {
+                                                  setState(() {
+                                                    subSlide['product'] =
+                                                        productControllers[
+                                                                subIndex]
+                                                            .text;
+                                                  });
+                                                  Utils.fieldFocusChange(
+                                                      context,
+                                                      productNode,
+                                                      lengthNode);
+                                                },
+                                                decoration: InputDecoration(
+                                                    border: InputBorder.none,
+                                                    hintText:
+                                                        'Product Details'),
                                               ),
-                                              Column(
-                                                children: [
-                                                  Text(
-                                                    'Width',
-                                                    style: TextStyle(
-                                                        color: Colors.black54),
-                                                  ),
-                                                  SizedBox(
-                                                    height: 10.0,
-                                                  ),
-                                                  SizedBox(
-                                                    width: 100,
-                                                    height: 40,
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(100),
-                                                        border: Border.all(
-                                                            width: 1,
-                                                            color: AppColors
-                                                                .buttonsColor),
-                                                      ),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .only(
-                                                                left: 10.0),
-                                                        child: TextFormField(
-                                                          controller:
-                                                              widthControllers[
-                                                                  subIndex],
-                                                          focusNode: widthNode,
-                                                          decoration:
-                                                              InputDecoration(
-                                                            border: InputBorder
-                                                                .none,
-                                                            hintText: 'width',
-                                                          ),
-                                                          onFieldSubmitted:
-                                                              (value) {
-                                                            setState(() {
-                                                              subSlide[
-                                                                      'width'] =
-                                                                  widthControllers[
-                                                                          subIndex]
-                                                                      .text;
-                                                              Utils.fieldFocusChange(
-                                                                  context,
-                                                                  widthNode,
-                                                                  heightNode);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                children: [
-                                                  Text(
-                                                    'Height',
-                                                    style: TextStyle(
-                                                        color: Colors.black54),
-                                                  ),
-                                                  SizedBox(
-                                                    height: 10.0,
-                                                  ),
-                                                  SizedBox(
-                                                    width: 100,
-                                                    height: 40,
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(100),
-                                                        border: Border.all(
-                                                            width: 1,
-                                                            color: AppColors
-                                                                .buttonsColor),
-                                                      ),
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .only(
-                                                                left: 10.0),
-                                                        child: TextFormField(
-                                                          controller:
-                                                              heightControllers[
-                                                                  subIndex],
-                                                          focusNode: heightNode,
-                                                          decoration:
-                                                              InputDecoration(
-                                                            border: InputBorder
-                                                                .none,
-                                                            hintText: 'height',
-                                                          ),
-                                                          onFieldSubmitted:
-                                                              (value) {
-                                                            setState(() {
-                                                              subSlide[
-                                                                      'height'] =
-                                                                  heightControllers[
-                                                                          subIndex]
-                                                                      .text;
-                                                              Utils.fieldFocusChange(
-                                                                  context,
-                                                                  heightNode,
-                                                                  countNode);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
+                                            ),
                                           ),
-                                        ],
-                                        if (subSlide['segmentedValue'] ==
-                                            'Bag/Sack') ...[
-                                          SizedBox(height: 16.0),
-                                          Text(
-                                            'Size',
-                                            style: TextStyle(
-                                                color: Colors.black54),
+                                          SizedBox(height: 16.0,),
+                                          Text('Type', style: TextStyle(color: Colors.black54),
                                           ),
                                           SizedBox(
                                             height: 10.0,
                                           ),
                                           Container(
-                                            // width:MediaQuery.of(context).size.width,
+                                            // width: MediaQuery.of(context).size.width,
                                             decoration: BoxDecoration(
-                                                border: Border.all(
-                                                    width: 1,
-                                                    color:
-                                                        AppColors.buttonsColor),
-                                                borderRadius:
-                                                    BorderRadius.circular(100)),
+                                              borderRadius:
+                                                  BorderRadius.circular(100),
+                                              border: Border.all(
+                                                  width: 1,
+                                                  color:
+                                                      AppColors.buttonsColor),
+                                            ),
                                             child: ToggleButtons(
                                               selectedColor: Colors.white,
                                               color: Colors.black,
@@ -889,293 +566,676 @@ class _CarouselSegmentedButtonPageState
                                                   bottomRight:
                                                       Radius.circular(20)),
                                               constraints: BoxConstraints(
-                                                minWidth: 110,
+                                                minWidth: MediaQuery.of(context)
+                                                        .size
+                                                        .width /
+                                                    3.6,
                                                 minHeight: 50,
                                               ),
                                               children: [
-                                                Text('Small'),
-                                                Text('Medium'),
-                                                Text('Large'),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text('Carton'),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text('Bag/Sack'),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text('Other'),
+                                                  ],
+                                                ),
                                               ],
+                                              renderBorder: false,
                                               isSelected: [
-                                                subSlide['sizeValue'] ==
-                                                    'Small',
-                                                subSlide['sizeValue'] ==
-                                                    'Medium',
-                                                subSlide['sizeValue'] ==
-                                                    'Large',
+                                                subSlide['segmentedValue'] ==
+                                                    'Carton',
+                                                subSlide['segmentedValue'] ==
+                                                    'Bag/Sack',
+                                                subSlide['segmentedValue'] ==
+                                                    'Other',
                                               ],
-                                              onPressed: (int newSizeIndex) {
+                                              onPressed: (int newIndex) {
                                                 setState(() {
-                                                  if (newSizeIndex == 0) {
-                                                    subSlide['sizeValue'] =
-                                                        'Small';
-                                                  } else if (newSizeIndex ==
-                                                      1) {
-                                                    subSlide['sizeValue'] =
-                                                        'Medium';
+                                                  if (newIndex == 0) {
+                                                    subSlide['segmentedValue'] = 'Carton';
+                                                    Utils.selectedType = subSlide['segmentedValue'];
+                                                  } else if (newIndex == 1) {
+                                                    subSlide['segmentedValue'] = 'Bag/Sack';
+                                                    Utils.selectedType = subSlide['segmentedValue'];
                                                   } else {
-                                                    subSlide['sizeValue'] =
-                                                        'Large';
+                                                    subSlide['segmentedValue'] =
+                                                        'Other';
+                                                    Utils.selectedType = subSlide['segmentedValue'];
                                                   }
                                                 });
                                               },
                                             ),
                                           ),
-                                          Container(
-                                            child: Column(
-                                              children: [
-                                                if (subSlide['sizeValue'] ==
-                                                    'Small') ...[
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceAround,
-                                                    children: [
-                                                      SizedBox(
-                                                          height: 100,
-                                                          child: Image.asset(
-                                                              './assets/images/sack.png')),
-                                                      Text(
-                                                        '10 Kg',
-                                                        style: TextStyle(
-                                                          color: AppColors
-                                                              .buttonsColor,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 22,
-                                                        ),
-                                                      )
-                                                    ],
-                                                  )
-                                                ],
-                                                if (subSlide['sizeValue'] ==
-                                                    'Medium') ...[
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceAround,
-                                                    children: [
-                                                      SizedBox(
-                                                          height: 100,
-                                                          child: Image.asset(
-                                                              './assets/images/sack.png')),
-                                                      Text(
-                                                        '25 Kg',
-                                                        style: TextStyle(
-                                                          color: AppColors
-                                                              .buttonsColor,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 22,
-                                                        ),
-                                                      )
-                                                    ],
-                                                  )
-                                                ],
-                                                if (subSlide['sizeValue'] ==
-                                                    'Large') ...[
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceAround,
-                                                    children: [
-                                                      SizedBox(
-                                                          height: 100,
-                                                          child: Image.asset(
-                                                              './assets/images/sack.png')),
-                                                      Text(
-                                                        '50 Kg',
-                                                        style: TextStyle(
-                                                          color: AppColors
-                                                              .buttonsColor,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 22,
-                                                        ),
-                                                      )
-                                                    ],
-                                                  )
-                                                ]
-                                              ],
-                                            ),
-                                          )
-                                        ],
-                                        SizedBox(height: 16.0),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Count',
-                                              style: TextStyle(
-                                                  color: Colors.black54),
-                                            ),
+                                          if (subSlide['segmentedValue'] == 'Carton') ...[
                                             SizedBox(
                                               height: 10.0,
                                             ),
-                                            SizedBox(
-                                              width: 100,
-                                              height: 40,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                      width: 1,
-                                                      color: AppColors
-                                                          .buttonsColor),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          100),
-                                                ),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 10.0),
-                                                  child: TextFormField(
-                                                    decoration: InputDecoration(
-                                                      border: InputBorder.none,
-                                                      hintText: 'count',
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          subSlide['sizedValue'] = 'S';
+                                                          small = true;
+                                                          medium = false;
+                                                          large = false;
+                                                          extralarge = false;
+                                                          Utils.selected = 'S';
+                                                          Utils.selectedSize = subSlide['sizedValue'];
+                                                          Utils.getIndividualCost(subSlide['sizedValue']);
+                                                          subSlide['price'] = Utils.priceByItem.toString();
+                                                          print('priceby item in slide ${subSlide['price']}');
+                                                        });
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                            color: subSlide['sizedValue'] == 'S'
+                                                                ? AppColors.buttonsColor : Color.fromRGBO(10, 8, 100, 1),
+                                                            borderRadius: BorderRadius.circular(15)),
+                                                        child: SizedBox(
+                                                            height: 80,
+                                                            width: 80,
+                                                            child: Image.asset('./assets/images/smallman.png')),
+                                                      ),
                                                     ),
-                                                    controller:
-                                                        countControllers[
-                                                            subIndex],
-                                                    focusNode: countNode,
-                                                    onFieldSubmitted: (value) {
-                                                      setState(() {
-                                                        subSlide['count'] =
-                                                            countControllers[
-                                                                    subIndex]
-                                                                .text;
-                                                        Utils.fieldFocusChange(
-                                                            context,
-                                                            countNode,
-                                                            lengthNode);
-                                                      });
-                                                    },
-                                                  ),
+                                                    subSlide['sizedValue'] == 'S' ? Text('Small', style: TextStyle(fontWeight: FontWeight.bold),)
+                                                        : Text(''),
+                                                  ],
                                                 ),
-                                              ),
+                                                Column(
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          subSlide['sizedValue'] = 'M';
+                                                          small = false;
+                                                          medium = true;
+                                                          large = false;
+                                                          extralarge = false;
+                                                          Utils.selectedSize =subSlide['sizeValue'];
+                                                          Utils.getIndividualCost(subSlide['sizedValue']);
+                                                          subSlide['price'] = Utils.priceByItem.toString();
+                                                        });
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                            color: subSlide[
+                                                                        'sizedValue'] == 'M'
+                                                                ? AppColors
+                                                                    .buttonsColor
+                                                                : Color
+                                                                    .fromRGBO(10, 8, 100, 1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        15)),
+                                                        child: SizedBox(
+                                                            height: 80,
+                                                            width: 80,
+                                                            child: Image.asset(
+                                                                './assets/images/mediumman.png')),
+                                                      ),
+                                                    ),
+                                                    subSlide['sizedValue'] ==
+                                                            'M'
+                                                        ? Text(
+                                                            'Medium',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          )
+                                                        : Text(''),
+                                                  ],
+                                                ),
+                                                Column(
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          subSlide['sizedValue'] = 'L';
+                                                          small = false;
+                                                          medium = false;
+                                                          large = true;
+                                                          extralarge = false;
+                                                          Utils.selectedSize = subSlide['sizeValue'];
+                                                          Utils.getIndividualCost(subSlide['sizedValue']);
+                                                          subSlide['price'] = Utils.priceByItem.toString();
+                                                          print(subSlide['price']);
+                                                        });
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                            color: subSlide['sizedValue'] == 'L'
+                                                                ? AppColors.buttonsColor
+                                                                : Color.fromRGBO(10, 8, 100, 1),
+                                                            borderRadius:
+                                                                BorderRadius.circular(15)),
+                                                        child: SizedBox(
+                                                            height: 80,
+                                                            width: 80,
+                                                            child: Image.asset(
+                                                                './assets/images/largeman.png')),
+                                                      ),
+                                                    ),
+                                                    subSlide['sizedValue'] == 'L'
+                                                        ? Text('Large', style: TextStyle(fontWeight: FontWeight.bold),)
+                                                        : Text(''),
+                                                  ],
+                                                ),
+                                                Column(
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
+                                                        setState(() {
+                                                          subSlide['sizedValue'] = 'XL';
+                                                          small = false;
+                                                          medium = false;
+                                                          large = false;
+                                                          extralarge = true;
+                                                          Utils.selectedSize = subSlide['sizeValue'];
+                                                          Utils.getIndividualCost(subSlide['sizedValue']);
+                                                          subSlide['price'] = Utils.priceByItem.toString();
+                                                        });
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                            color: subSlide['sizedValue'] == 'XL'
+                                                                ? AppColors
+                                                                    .buttonsColor
+                                                                : Color
+                                                                    .fromRGBO(
+                                                                        10,
+                                                                        8,
+                                                                        100,
+                                                                        1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        15)),
+                                                        child: SizedBox(
+                                                            height: 80,
+                                                            width: 80,
+                                                            child: Image.asset(
+                                                                './assets/images/extralarge man.png')),
+                                                      ),
+                                                    ),
+                                                    subSlide['sizedValue'] == 'XL'
+                                                        ? Text(
+                                                            'X Large',
+                                                            style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold),
+                                                          )
+                                                        : Text(''),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ],
-                                        ),
-                                        SizedBox(
-                                          height: 10.0,
-                                        ),
-                                        FutureBuilder(
-                                          future: Utils.getIndividualCost(),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return Center(
-                                                  child:
-                                                      CircularProgressIndicator());
-                                            } else if (snapshot.hasError) {
-                                              return Center(
-                                                child: Text(
-                                                  '${snapshot.error} occurred',
+                                          if (subSlide['segmentedValue'] == 'Other') ...[
+                                            SizedBox(height: 16.0),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    Text(
+                                                      'Length',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.black54),
+                                                    ),
+                                                    SizedBox(
+                                                      height: 10.0,
+                                                    ),
+                                                    SizedBox(
+                                                      width: 100,
+                                                      height: 40,
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      100),
+                                                          border: Border.all(
+                                                              width: 1,
+                                                              color: AppColors
+                                                                  .buttonsColor),
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 10.0),
+                                                          child: TextFormField(
+                                                            controller:
+                                                                lengthControllers[
+                                                                    subIndex],
+                                                            focusNode:
+                                                                lengthNode,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              border:
+                                                                  InputBorder
+                                                                      .none,
+                                                              hintText:
+                                                                  'Length',
+                                                            ),
+                                                            onFieldSubmitted:
+                                                                (value) {
+                                                              setState(() {
+                                                                print(value);
+                                                                subSlide[
+                                                                        'length'] =
+                                                                    lengthControllers[
+                                                                            subIndex]
+                                                                        .text;
+                                                                Utils.fieldFocusChange(
+                                                                    context,
+                                                                    lengthNode,
+                                                                    widthNode);
+                                                              });
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              );
-                                            } else if (snapshot.hasData) {
-                                              final data = snapshot.data
-                                                  as Map<String, dynamic>;
-                                              return Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    'Price: ₹',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18,
+                                                Column(
+                                                  children: [
+                                                    Text(
+                                                      'Width',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.black54),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    '${data['cost'].toString()}',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18,
+                                                    SizedBox(
+                                                      height: 10.0,
                                                     ),
-                                                  ),
-                                                ],
-                                              );
-                                            } else {
-                                              return Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                children: [
-                                                  Text(
-                                                    'Price: ₹',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18,
+                                                    SizedBox(
+                                                      width: 100,
+                                                      height: 40,
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      100),
+                                                          border: Border.all(
+                                                              width: 1,
+                                                              color: AppColors
+                                                                  .buttonsColor),
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 10.0),
+                                                          child: TextFormField(
+                                                            controller:
+                                                                widthControllers[
+                                                                    subIndex],
+                                                            focusNode:
+                                                                widthNode,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              border:
+                                                                  InputBorder
+                                                                      .none,
+                                                              hintText: 'width',
+                                                            ),
+                                                            onFieldSubmitted:
+                                                                (value) {
+                                                              setState(() {
+                                                                subSlide['width'] = widthControllers[subIndex].text;
+                                                                Utils.fieldFocusChange(context, widthNode, heightNode);
+                                                              });
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ),
-                                                  ),
-                                                  Text(
-                                                    '0',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontSize: 18,
+                                                  ],
+                                                ),
+                                                Column(
+                                                  children: [
+                                                    Text(
+                                                      'Height',
+                                                      style: TextStyle(
+                                                          color:
+                                                              Colors.black54),
                                                     ),
-                                                  ),
-                                                ],
-                                              );
-                                            }
-                                          },
-                                        ),
-                                        SizedBox(
-                                          height: 10.0,
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceAround,
-                                          children: [
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                addSubSlide(mainIndex);
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                primary: Colors.green,
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            100.0)),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.add,
-                                                    size: 20,
-                                                    color: Colors.white,
-                                                  ),
-                                                  Text('Add Item'),
-                                                ],
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: 10,
-                                            ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                primary: Colors.red,
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            100.0)),
-                                              ),
-                                              onPressed: () {
-                                                removeSubSlide(
-                                                    mainIndex, subSlide['id']);
-                                              },
-                                              child: Text('Delete'),
+                                                    SizedBox(
+                                                      height: 10.0,
+                                                    ),
+                                                    SizedBox(
+                                                      width: 100,
+                                                      height: 40,
+                                                      child: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      100),
+                                                          border: Border.all(
+                                                              width: 1,
+                                                              color: AppColors
+                                                                  .buttonsColor),
+                                                        ),
+                                                        child: Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 10.0),
+                                                          child: TextFormField(
+                                                            controller:
+                                                                heightControllers[
+                                                                    subIndex],
+                                                            focusNode:
+                                                                heightNode,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              border:
+                                                                  InputBorder
+                                                                      .none,
+                                                              hintText:
+                                                                  'height',
+                                                            ),
+                                                            onFieldSubmitted: (value) {
+                                                              setState(() {
+                                                                subSlide['height'] = heightControllers[subIndex].text;
+                                                                Utils.fieldFocusChange(context, heightNode, countNode);
+                                                              });
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ],
-                                        ),
-                                        SizedBox(height: 16.0),
-                                      ],
+                                          if (subSlide['segmentedValue'] == 'Bag/Sack') ...[
+                                            SizedBox(height: 16.0),
+                                            Text(
+                                              'Size',
+                                              style: TextStyle(
+                                                  color: Colors.black54),
+                                            ),
+                                            SizedBox(height: 10.0,),
+                                            Container(
+                                              // width:MediaQuery.of(context).size.width,
+                                              decoration: BoxDecoration(
+                                                  border: Border.all(width: 1, color: AppColors.buttonsColor),
+                                                  borderRadius: BorderRadius.circular(100)),
+                                              child: ToggleButtons(
+                                                selectedColor: Colors.white,
+                                                color: Colors.black,
+                                                fillColor: AppColors.buttonsColor,
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(20),
+                                                  bottomLeft: Radius.circular(20),
+                                                  topRight: Radius.circular(20),
+                                                  bottomRight: Radius.circular(20),
+                                                ),
+                                                constraints: BoxConstraints(
+                                                  minWidth: MediaQuery.of(context).size.width / 3.6,
+                                                  minHeight: 50,
+                                                ),
+                                                children: [
+                                                  Text('Small'),
+                                                  Text('Medium'),
+                                                  Text('Large'),
+                                                ],
+                                                isSelected: [
+                                                  subSlide['sizedValue'] == 'S',
+                                                  subSlide['sizedValue'] == 'M',
+                                                  subSlide['sizedValue'] == 'L',
+                                                ],
+                                                onPressed: (int newSizeIndex) {
+                                                  setState(() {
+                                                    if (newSizeIndex == 0) {
+                                                      subSlide['sizedValue'] = 'S';
+                                                      print(subSlide['sizedValue']);
+                                                      Utils.getIndividualCost(subSlide['sizedValue']);
+                                                      subSlide['price'] = Utils.priceByItem.toString();
+                                                    } else if (newSizeIndex == 1) {
+                                                      subSlide['sizedValue'] = 'M';
+                                                      Utils.getIndividualCost(subSlide['sizedValue']);
+                                                      print(subSlide['sizedValue']);
+                                                      subSlide['price'] = Utils.priceByItem.toString();
+                                                    } else {
+                                                      subSlide['sizedValue'] = 'L';
+                                                      Utils.getIndividualCost(subSlide['sizedValue']);
+                                                      print(subSlide['sizedValue']);
+                                                      subSlide['price'] = Utils.priceByItem.toString();
+                                                    }
+                                                  });
+                                                },
+                                              ),
+
+                                            ),
+                                            Container(
+                                              child: Column(
+                                                children: [
+                                                  if (subSlide['sizedValue'] == 'S') ...[
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.spaceAround,
+                                                      children: [
+                                                        SizedBox(
+                                                            height: 100,
+                                                            child: Image.asset('./assets/images/sack.png')),
+                                                        Text('10 Kg',
+                                                          style: TextStyle(color: AppColors.buttonsColor,
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: 22,
+                                                          ),
+                                                        )
+                                                      ],
+                                                    )
+                                                  ],
+                                                  if (subSlide['sizedValue'] == 'M') ...[
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.spaceAround,
+                                                      children: [
+                                                        SizedBox(
+                                                            height: 100,
+                                                            child: Image.asset('./assets/images/sack.png')),
+                                                        Text('25 Kg',
+                                                          style: TextStyle(
+                                                            color: AppColors
+                                                                .buttonsColor,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 22,
+                                                          ),
+                                                        )
+                                                      ],
+                                                    )
+                                                  ],
+                                                  if (subSlide['sizedValue'] == 'L') ...[
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.spaceAround,
+                                                      children: [
+                                                        SizedBox(
+                                                            height: 100,
+                                                            child: Image.asset('./assets/images/sack.png')),
+                                                        Text('50 Kg',
+                                                          style: TextStyle(
+                                                            color: AppColors
+                                                                .buttonsColor,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 22,
+                                                          ),
+                                                        )
+                                                      ],
+                                                    )
+                                                  ],
+                                                ],
+                                              ),
+                                            )
+                                          ],
+                                          SizedBox(height: 16.0),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Count', style: TextStyle(color: Colors.black54),),
+                                              SizedBox(height: 10.0,),
+                                              SizedBox(
+                                                width: 100,
+                                                height: 40,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(
+                                                        width: 1,
+                                                        color: AppColors
+                                                            .buttonsColor),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            100),
+                                                  ),
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 10.0),
+                                                    child: TextFormField(
+                                                      keyboardType:TextInputType.number,
+                                                      decoration: InputDecoration(
+                                                        border: InputBorder.none,
+                                                        hintText: 'count',
+                                                      ),
+                                                      controller: countControllers[subIndex],
+                                                      focusNode: countNode,
+                                                      onFieldSubmitted: (value) {
+                                                        setState(() {
+                                                          subSlide['count'] = countControllers[subIndex].text;
+                                                          Utils.fieldFocusChange(context, countNode, lengthNode);
+                                                          int pri = int.parse(subSlide['price']);
+                                                          int cou = int.parse(subSlide['count']);
+                                                          Utils.totalPrice = (pri*cou);
+                                                          subSlide['priceBycount'] = Utils.totalPrice;
+                                                          print('tootal price:${subSlide['priceBycount']}');
+                                                          // Utils.totalPrice = subSlide['price'] * int.parse(subSlide['count']);
+                                                          print('Total price: ${Utils.totalPrice}');
+                                                          setState(() {
+
+                                                          });
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(
+                                            height: 10.0,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              Text('Price: ₹',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                              Text(
+                                              subSlide['priceBycount'] == null? '0' :subSlide['priceBycount'].toString(),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(
+                                            height: 10.0,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceAround,
+                                            children: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  addSubSlide(mainIndex);
+                                                  Utils.productList.add({
+                                                    'product': subSlide['product'],
+                                                    'type': subSlide['segmentedValue'],
+                                                    'size': subSlide['sizedValue'],
+                                                    'count': subSlide['count'],
+                                                  });
+                                                  print('product list');
+                                                  print(Utils.productList);
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  primary: Colors.green,
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(100.0)),),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.add,
+                                                      size: 20,
+                                                      color: Colors.white,
+                                                    ),
+                                                    Text('Add Item'),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(width: 10,),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  primary: Colors.red,
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(100.0)),),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    if(subSlide.length <+)
+                                                    removeSubSlide(mainIndex, subSlide['id']);
+                                                    subSlide['cost'] = 0;
+                                                    Utils.pricebyCount = 0;
+                                                  });
+                                                },
+                                                child: Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 16.0),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 );
@@ -1201,6 +1261,24 @@ class _CarouselSegmentedButtonPageState
                             SizedBox(height: 16.0),
 
                             SizedBox(height: 16.0),
+                            //total price
+                            // Row(
+                            //   mainAxisAlignment: MainAxisAlignment.end,
+                            //   children: [
+                            //     Text('Total Price: ₹',
+                            //       style: TextStyle(
+                            //         fontWeight: FontWeight.bold,
+                            //         fontSize: 18,
+                            //       ),
+                            //     ),
+                            //     Text(
+                            //       mainSlide['total_cost'].toString(),
+                            //       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18,),
+                            //     ),
+                            //   ],
+                            // ),
+                            SizedBox(height: 10.0,),
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
@@ -1221,6 +1299,12 @@ class _CarouselSegmentedButtonPageState
                                   onTap: () {
                                     setState(() {
                                       addMainSlide();
+                                      Utils.shipmentList.add({
+                                        'to': Utils.ToAddress[0]['address_label'],
+                                        'cost': Utils.priceByItem,
+                                      });
+                                      print('shipmentList');
+                                      print(Utils.shipmentList);
                                     });
                                   },
                                   child: Container(
@@ -1249,6 +1333,7 @@ class _CarouselSegmentedButtonPageState
                                         return;
                                       }
                                       removeMainSlide(mainSlide['id']);
+                                      Utils.shipmentList.removeAt(mainIndex);
                                     });
                                   },
                                   child: Container(
@@ -1333,26 +1418,20 @@ class _CarouselSegmentedButtonPageState
             InkWell(
               onTap: () {
                 showAlertDialog(context);
+                print(Utils.orderdetails);
               },
               child: Container(
                 decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border.all(width: 1, color: AppColors.buttonsColor),
-                    borderRadius: BorderRadius.circular(100)),
+                    borderRadius: BorderRadius.circular(5)),
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
-                  child: Text(
-                    'Calculate Price',
-                    style: TextStyle(
-                      color: AppColors.buttonsColor,
-                    ),
-                  ),
+                  child: Text('Calculate Price', style: TextStyle(color: AppColors.buttonsColor,),),
                 ),
               ),
             ),
-            SizedBox(
-              height: 16.0,
-            ),
+            SizedBox(height: 16.0,),
           ],
         ),
       ),
@@ -1368,7 +1447,8 @@ class _CarouselSegmentedButtonPageState
           child: const Text(
             'Place Order',
             style: const TextStyle(
-              fontSize: 15,),
+              fontSize: 15,
+            ),
           ),
         ),
         style: ElevatedButton.styleFrom(
@@ -1378,43 +1458,43 @@ class _CarouselSegmentedButtonPageState
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(40))),
-        onPressed:(){
-          Utils.createOrder(Order(
-              from: Utils.selectedFromAddress.toString(),
-              date: Utils.selectedDate.toString(),
-              user: 'Musthafa',
-              payment: 'from App',
-              shipment:[
-                Shipment(
-                  to: Utils.todistrictSelected.toString(),
-                  cost:1000 ,
-                  products: [
-                    Product(
-                      product: 'book',
-                      type: 'carton',
-                      size: 'S',
-                      count: 2,
-                    ),
-                    Product(
-                        product: 'rice',
-                        type: 'sack',
-                        size: 'M',
-                        count: 3),
-                  ],
-                ),
-                Shipment(
-                    to: Utils.selectedDropAddress.toString(),
-                    cost: 2000,
-                    products: [
-                      Product(
-                        product: 'Cement',
-                        type: 'sack',
-                        size: "S",
-                        count: 3,
-                      ),
-                    ]
-                )
-              ]));
+        onPressed: () {
+          // Utils.createOrder(Order(
+          //     from: Utils.selectedFromAddress.toString(),
+          //     date: Utils.selectedDate.toString(),
+          //     user: 'Musthafa',
+          //     payment: 'from App',
+          //     shipment:[
+          //       Shipment(
+          //         to: Utils.todistrictSelected.toString(),
+          //         cost:Utils.priceByItem ,
+          //         products: [
+          //           Product(
+          //             product: 'book',
+          //             type: 'carton',
+          //             size: 'S',
+          //             count: 2,
+          //           ),
+          //           Product(
+          //               product: 'rice',
+          //               type: 'sack',
+          //               size: 'M',
+          //               count: 3),
+          //         ],
+          //       ),
+          //       Shipment(
+          //           to: Utils.selectedDropAddress.toString(),
+          //           cost: Utils.priceByItem,
+          //           products: [
+          //             Product(
+          //               product: 'Cement',
+          //               type: 'sack',
+          //               size: "S",
+          //               count: 3,
+          //             ),
+          //           ]
+          //       )
+          //     ]));
           Navigator.pushNamed(context, RoutesName.orderPlacedSplash);
 
           void resetButtonClicked() {
@@ -1422,60 +1502,82 @@ class _CarouselSegmentedButtonPageState
               // clear other variables
             });
           }
+
           resetButtonClicked();
-        }
-    );
+        });
     AlertDialog alert = AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
       content: Container(
-        height: MediaQuery.of(context).size.height*0.45,
+        height: MediaQuery.of(context).size.height * 0.45,
         decoration: BoxDecoration(
           shape: BoxShape.rectangle,
           color: Colors.blue[50],
           borderRadius: const BorderRadius.all(Radius.circular(20)),
-          boxShadow:[
+          boxShadow: [
             BoxShadow(
               blurRadius: 20,
               color: Colors.blue.shade100,
-            ) ],
+            )
+          ],
         ),
-
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
-              const SizedBox(height: 10,),
+              const SizedBox(
+                height: 10,
+              ),
               const Text(
                 "Total Price",
-                style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black38),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.black38),
               ),
-              const SizedBox(height: 5,),
-              totalPrice==null? const CircularProgressIndicator() :
-              // Text("₹${totalPrice==null? '0':totalPrice.toStringAsFixed(0)}"
-              Text('0'
-                  ,style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10,),
-              Text('Please note that this amount is based on the inputs provided during the booking process, '
-                  'it might be revised in case of significant variations',
-                  textAlign: TextAlign.center,
-                  style:AppStyles.stylesdrop,
+              const SizedBox(
+                height: 5,
+              ),
+              totalPrice == null
+                  ? const CircularProgressIndicator()
+                  :
+                  // Text("₹${totalPrice==null? '0':totalPrice.toStringAsFixed(0)}"
+                  Text('7946',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                'Please note that this amount is based on the inputs provided during the booking process, '
+                'it might be revised in case of significant variations',
+                textAlign: TextAlign.center,
+                style: AppStyles.stylesdrop,
                 // TextStyle(fontWeight: FontWeight.bold,color: Colors.black38,fontSize: 14)
-              )
-              ,const SizedBox(height: 20,)
-              , const Text('Booking Advance',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black38)),
-              const SizedBox(height: 5,),
-              bookingAdvance==null? const CircularProgressIndicator() :
-              // Text("₹${bookingAdvance.toStringAsFixed(0)}",
-              Text('0',
-                  style: const TextStyle(fontWeight: FontWeight.bold,color: Colors.blue)),
-              const SizedBox(height: 10,),
-              Text('This is non-refundable, however can be adjusted in case of date changes',
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              const Text('Booking Advance',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black38)),
+              const SizedBox(
+                height: 5,
+              ),
+              bookingAdvance == null
+                  ? const CircularProgressIndicator()
+                  :
+                  // Text("₹${bookingAdvance.toStringAsFixed(0)}",
+                  Text('0',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue)),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                  'This is non-refundable, however can be adjusted in case of date changes',
                   textAlign: TextAlign.center,
                   style: AppStyles.stylesdrop
-                // TextStyle(fontWeight: FontWeight.bold,color: Colors.black38,fontSize: 14)
-              ),
+                  // TextStyle(fontWeight: FontWeight.bold,color: Colors.black38,fontSize: 14)
+                  ),
             ],
           ),
         ),
