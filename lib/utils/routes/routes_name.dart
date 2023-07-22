@@ -23,5 +23,11 @@ class RoutesName{
 
   static const String chatgptslide = 'chatgptslide';
 
+  static const String chatgptslideworkout = 'chatgptslideworkout';
+
+  static const String login = 'login page';
+
+  static const String orderFailedSplash = 'order failed splash';
+
   // static const String chatgptorder = 'orderingpt';
 }

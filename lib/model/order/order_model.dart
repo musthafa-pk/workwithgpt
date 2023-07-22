@@ -1,99 +1,88 @@
-class Order {
-  String from;
-  String date;
-  String user;
-  String payment;
-  List<Shipment> shipment;
+class OrderModel {
+  String? from;
+  String? date;
+  String? user;
+  String? payment;
+  List<Shipment>? shipment;
 
-  Order({
-    required this.from,
-    required this.date,
-    required this.user,
-    required this.payment,
-    required this.shipment,
-  });
+  OrderModel({this.from, this.date, this.user, this.payment, this.shipment});
 
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      from: json['from'],
-      date: json['date'],
-      user: json['user'],
-      payment: json['payment'],
-      shipment: List<Shipment>.from(
-        json['shipment'].map((shipment) => Shipment.fromJson(shipment)),
-      ),
-    );
+  OrderModel.fromJson(Map<String, dynamic> json) {
+    from = json['from'];
+    date = json['date'];
+    user = json['user'];
+    payment = json['payment'];
+    if (json['shipment'] != null) {
+      shipment = <Shipment>[];
+      json['shipment'].forEach((v) {
+        shipment!.add(new Shipment.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'from': from,
-      'date': date,
-      'user': user,
-      'payment': payment,
-      'shipment': shipment.map((shipment) => shipment.toJson()).toList(),
-    };
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['from'] = this.from;
+    data['date'] = this.date;
+    data['user'] = this.user;
+    data['payment'] = this.payment;
+    if (this.shipment != null) {
+      data['shipment'] = this.shipment!.map((v) => v.toJson()).toList();
+    }
+    return data;
   }
 }
 
 class Shipment {
-  String to;
-  int cost;
-  List<Product> products;
+  String? to;
+  int? cost;
+  List<Products>? products;
 
-  Shipment({
-    required this.to,
-    required this.cost,
-    required this.products,
-  });
+  Shipment({this.to, this.cost, this.products});
 
-  factory Shipment.fromJson(Map<String, dynamic> json) {
-    return Shipment(
-      to: json['to'],
-      cost: json['cost'],
-      products: List<Product>.from(
-        json['products'].map((product) => Product.fromJson(product)),
-      ),
-    );
+  Shipment.fromJson(Map<String, dynamic> json) {
+    to = json['to'];
+    cost = json['cost'];
+    if (json['products'] != null) {
+      products = <Products>[];
+      json['products'].forEach((v) {
+        products!.add(new Products.fromJson(v));
+      });
+    }
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'to': to,
-      'cost': cost,
-      'products': products.map((product) => product.toJson()).toList(),
-    };
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['to'] = this.to;
+    data['cost'] = this.cost;
+    if (this.products != null) {
+      data['products'] = this.products!.map((v) => v.toJson()).toList();
+    }
+    return data;
   }
 }
 
-class Product {
-  String product;
-  String type;
-  String size;
-  int count;
+class Products {
+  String? product;
+  String? type;
+  String? size;
+  int? count;
 
-  Product({
-    required this.product,
-    required this.type,
-    required this.size,
-    required this.count,
-  });
+  Products({this.product, this.type, this.size, this.count});
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      product: json['product'],
-      type: json['type'],
-      size: json['size'],
-      count: json['count'],
-    );
+  Products.fromJson(Map<String, dynamic> json) {
+    product = json['product'];
+    type = json['type'];
+    size = json['size'];
+    count = json['count'];
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'product': product,
-      'type': type,
-      'size': size,
-      'count': count,
-    };
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['product'] = this.product;
+    data['type'] = this.type;
+    data['size'] = this.size;
+    data['count'] = this.count;
+    return data;
   }
 }

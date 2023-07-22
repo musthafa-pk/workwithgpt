@@ -51,6 +51,7 @@ dependencies:
   intl: ^0.18.1
   carousel_slider: ^4.2.1
   get: ^4.6.5
+  loading_animation_widget: ^1.2.0+4
 
 
 
@@ -102,7 +103,7 @@ flutter:
     - assets/images/extralarge man.png
     - assets/images/user-photo.png
     - assets/lottie/order-placed.json
-
+    - assets/images/logistics1.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

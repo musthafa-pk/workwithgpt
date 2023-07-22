@@ -23,47 +23,6 @@ class BookingPage2 extends StatefulWidget {
 class _BookingPage2State extends State<BookingPage2> {
 
 
-  Order order = Order(
-      from: 'kkd',
-      date: '2023-10-22',
-      user: 'musthafa',
-      payment: 'from app',
-      shipment: [
-        Shipment(
-          to: 'knr',
-          cost: 1000,
-          products: [
-            Product(
-              product: 'books',
-              type: 'carton',
-              size: 'S',
-              count: 5,
-            ),
-            Product(
-              product: 'clothes',
-              type: 'sack',
-              size: 'M',
-              count: 4,
-            ),
-          ],
-        ),
-        Shipment(
-            to: 'mlp',
-            cost: 2000,
-            products: [
-              Product(
-                product: 'rice',
-                type: 'sack',
-                size: 'L',
-                count: 10,
-              )
-            ])
-      ]
-
-  );
-
-
-
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
   int currentPos = 0;
@@ -1520,42 +1479,43 @@ class CollectDataWidget extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(40))),
         onPressed: () {
-          Utils.createOrder(Order(
-              from: Utils.selectedFromAddress.toString(),
-              date: Utils.selectedDate.toString(),
-              user: 'Musthafa',
-              payment: 'from App',
-              shipment:[
-                Shipment(
-                  to: Utils.todistrictSelected.toString(),
-                  cost:1000 ,
-                  products: [
-                    Product(
-                        product: 'book',
-                        type: 'carton',
-                        size: 'S',
-                        count: 2,
-                    ),
-                    Product(
-                        product: 'rice',
-                        type: 'sack',
-                        size: 'M',
-                        count: 3),
-                  ],
-                ),
-                Shipment(
-                    to: Utils.selectedDropAddress.toString(),
-                    cost: 2000,
-                    products: [
-                      Product(
-                          product: 'Cement',
-                          type: 'sack',
-                          size: "S",
-                          count: 3,
-                      ),
-                    ]
-                )
-              ]));
+          // Utils.createOrder(Order(
+          //     from: Utils.selectedFromAddress.toString(),
+          //     date: Utils.selectedDate.toString(),
+          //     user: 'Musthafa',
+          //     payment: 'from App',
+          //     shipment:[
+          //       Shipment(
+          //         to: Utils.todistrictSelected.toString(),
+          //         cost:1000 ,
+          //         products: [
+          //           Product(
+          //               product: 'book',
+          //               type: 'carton',
+          //               size: 'S',
+          //               count: 2,
+          //           ),
+          //           Product(
+          //               product: 'rice',
+          //               type: 'sack',
+          //               size: 'M',
+          //               count: 3),
+          //         ],
+          //       ),
+          //       Shipment(
+          //           to: Utils.selectedDropAddress.toString(),
+          //           cost: 2000,
+          //           products: [
+          //             Product(
+          //                 product: 'Cement',
+          //                 type: 'sack',
+          //                 size: "S",
+          //                 count: 3,
+          //             ),
+          //           ]
+          //       )
+          //     ]));
+          Utils.placeOrder();
           Navigator.pushNamed(context, RoutesName.orderPlacedSplash);
 
           void resetButtonClicked() {

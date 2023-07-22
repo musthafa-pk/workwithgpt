@@ -15,7 +15,11 @@ class _Support_pageState extends State<Support_page> {
         child: Column(
           children: [
             Center(
-              child: Text('support chaavie...'),
+              child: Text('www.chaaviesolutions.com',style: TextStyle(
+                color: Colors.black54,
+                fontSize: 18,
+                fontWeight: FontWeight.bold
+              ),),
             )
           ],
         ),

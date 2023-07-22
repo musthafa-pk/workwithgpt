@@ -56,7 +56,7 @@ class _PageOneState extends State<PageOne> {
       ],
       bodyItems: [
         HomePage(),
-        HomePage(),
+        SupportChaavie()
       ],
       actionBarView: BookingPage1(),
     );

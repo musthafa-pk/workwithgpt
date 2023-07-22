@@ -436,7 +436,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_7=false;
                                               s_8=false;
                                               Utils.selectedDate = DateTime.now().toString();
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 1))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 1))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -478,7 +478,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=false;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 1))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 1))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -516,7 +516,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=false;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 2))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 2))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -554,7 +554,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=false;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 2))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 2))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -593,7 +593,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=false;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 4))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 4))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -631,7 +631,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=true;
                                               s_8=false;
-                                              Utils.selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 5))).toString();
+                                              Utils.selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 5))).toString();
                                               print(Utils.selectedDate);
                                             });
                                           },
@@ -669,7 +669,7 @@ class _BookingPage1State extends State<BookingPage1> {
                                               s_6=false;
                                               s_7=false;
                                               s_8=true;
-                                              DateTime  selectedDate = DateFormat('dd-MM-y').format(DateTime.now().add(Duration(days: 6))) as DateTime;
+                                              DateTime  selectedDate = DateFormat('y-MM-dd').format(DateTime.now().add(Duration(days: 6))) as DateTime;
                                               Utils.selectedDate = DateFormat('dd-MM-y').format(selectedDate).toString();
                                               print(Utils.selectedDate);
                                             });

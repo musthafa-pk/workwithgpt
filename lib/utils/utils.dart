@@ -18,7 +18,7 @@ import '../res/app_url.dart';
 import 'package:http/http.dart' as http;
 class Utils{
   //user details
-  static String? userName = 'CHAAVIE SOLUTIONS';
+  static String? userName = 'CHAAVIE';
   static int userId = 85;
   static String? userEmail = 'chaavi@gmail.com';
   static String? phoneNumber = '1234567890';
@@ -58,13 +58,21 @@ class Utils{
   static String? type = 'carton';
   static String? size = 'S';
 
+  //booking status
+  static bool Booking_success = false;
+  static bool Booking_failed = false;
+
   //////
   static int? price;
   static int? bookingAdvance;
   static int? totalPrice;
+  static int? maintotalPrice;
   static var pricebyCount;
 
   static int priceByItem = 0;
+
+  static double advancePrice = 0;
+  static double balanceAmout = 0;
 
   static String? selectedType;
   static String? selectedSize;
@@ -251,7 +259,6 @@ class Utils{
 
   //getindividual cost
   static Future<void> getIndividualCost(String size) async {
-    print('called.....');
     final url = Uri.parse('http://192.168.1.4:3000/orders/get_individual_cost');
     // print('size is :${size}');
     // print('district is :${Utils.FromAddress[0]['district']}'.toLowerCase());
@@ -295,6 +302,8 @@ class Utils{
         final responseData = jsonDecode(response.body);
         // Process the response data here
         Utils.priceByItem = responseData['cost'];
+        // Utils.pricebyCount = (int.parse(Utils.count as String )* int.parse(Utils.priceByItem as String));
+        print(Utils.pricebyCount);
         return responseData['cost'];
       } else {
         print('Request failed with status: ${response.statusCode}');
@@ -305,15 +314,93 @@ class Utils{
   }
   //place order
 
-  static Future<void> createOrder(Order order) async {
+  static Future<void> createOrder() async {
     final url = Uri.parse('http://192.168.1.4:3000/orders');
 
     try {
       final response = await http.post(url,
-          body: jsonEncode(order.toJson()),
+          body: {
+            "from": "CLT SHOP",
+            "date": "2023-07-15",
+            "user": "deepak",
+            "payment": "from app",
+            "shipment": [
+              {
+                "to": "VLK SHOP",
+                "cost": 0,
+                "products": [
+                  {
+                    "product": "pineapple",
+                    "type": "Carton",
+                    "size": "S",
+                    "count": 2
+                  }
+
+                ]
+              }
+
+            ]
+          },
           headers: {'Content-Type': 'application/json'});
 
       if (response.statusCode == 201) {
+        print('Order created successfully');
+        // Navigator.pushNamed(context, RoutesName.orderPlacedSplash);
+      } else {
+        print('Failed to create order. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating order: $e');
+    }
+  }
+
+  //find total Price
+  static getTotalPrice(){
+    totalPrice = 1000;
+    print('total price is:');
+  }
+
+  //find advance price
+static getAdvancePrice(){
+    print('advance price is:');
+    advancePrice = ((totalPrice! * 50)/100) as double;
+    balanceAmout = (totalPrice! - advancePrice!);
+    print(advancePrice);
+    print(balanceAmout);
+}
+//place order
+  static Future<void> placeOrder() async {
+    final url = Uri.parse('http://192.168.1.4:3000/orders');
+
+    // Create the shipment list with the desired structure
+    final shipmentList = Utils.shipmentList.map((shipment) {
+      return {
+        'from': shipment['from'],
+        'to': shipment['to'],
+        'cost': shipment['cost'],
+        'products': Utils.productList,
+      };
+    }).toList();
+
+    // Create the order details map
+    final orderDetails = {
+      'date': Utils.selectedDate,
+      'user': 'deepak',
+      'payment': Utils.payement,
+      'shipment': shipmentList,
+    };
+
+    Utils.orderdetails.add(orderDetails);
+    print(Utils.orderdetails[0]);
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode(Utils.orderdetails[0]), // Convert to JSON string
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        Utils.Booking_success = true;
         print('Order created successfully');
         // Navigator.pushNamed(context, RoutesName.orderPlacedSplash);
       } else {
